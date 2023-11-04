@@ -9,9 +9,9 @@ import (
 )
 
 type Todo struct {
-	id 	int64
-	name 	string
-	isDone	bool
+	Id     int64
+	Name   string
+	IsDone bool
 }
 var db *sql.DB
 
@@ -35,7 +35,10 @@ func Setup() {
 
 	log.Println("Connected to database")
 
-	getAllTodos()
+	_, err = getAllTodos()
+	if err != nil {
+		return
+	}
 
 	todo, err := GetTodo(1)
 	if err != nil {
@@ -44,11 +47,8 @@ func Setup() {
 	}
 
 	fmt.Println("todo: ", todo)
-
-	defer db.Close()
 }
-
-func getAllTodos() {
+func getAllTodos() ([]Todo, error){
 
 	rows, err := db.Query("SELECT * FROM todos")
 	if err != nil{
@@ -63,12 +63,12 @@ func getAllTodos() {
 	for rows.Next(){
 		err := rows.Scan(&id, &name, &isDone)
 		if err != nil {
-			fmt.Println("Error: ", err)
+			return nil, err
 		}
 		actualTodo := Todo{
-			id:     id,
-			name:   name,
-			isDone: isDone,
+			Id:     id,
+			Name:   name,
+			IsDone: isDone,
 		}
 		todos = append(todos, actualTodo)
 	}
@@ -77,10 +77,12 @@ func getAllTodos() {
 		fmt.Println(t)
 	}
 	fmt.Println(" ")
+	return todos, nil
 }
 
+
 func CreateTodo(name string)error{
-	query := `Insert into todos(id, name, isdone) values ($1, $2, $3)`
+	query := `Insert into todos(Id, Name, isdone) values ($1, $2, $3)`
 
 	_, err := db.Exec(query, 2, name, false)
 	if err != nil {
@@ -94,7 +96,7 @@ func CreateTodo(name string)error{
 }
 
 func DeleteTodo(id int64) error{
-	query := `DELETE from todos WHERE id = $1`
+	query := `DELETE from todos WHERE Id = $1`
 
 	_, err := db.Exec(query, id)
 
@@ -102,13 +104,13 @@ func DeleteTodo(id int64) error{
 		fmt.Println("Error in deleting todo: " , err)
 	}
 
-	fmt.Println("todo of id : " , id , " deleted")
+	fmt.Println("todo of Id : " , id , " deleted")
 	return nil
 
 }
 
 func GetTodo(id int64) (Todo, error){
-	query := `Select * from todos where id = $1`
+	query := `Select * from todos where Id = $1`
 
 	rows, err := db.Query(query, id)
 	if err != nil {
@@ -125,9 +127,9 @@ func GetTodo(id int64) (Todo, error){
 	}
 
 	actualTodo := Todo{
-		id:     idGet,
-		name:   name,
-		isDone:	isDone,
+		Id:     idGet,
+		Name:   name,
+		IsDone: isDone,
 	}
 	return actualTodo, nil
 }
@@ -138,9 +140,9 @@ func SetDone(id int64) error{
 	if err != nil{
 		return err
 	}
-	query := `update todos set isdone $1 where id = $2`
+	query := `update todos set isdone $1 where Id = $2`
 
-	_, err = db.Exec(query,!todo.isDone, id)
+	_, err = db.Exec(query,!todo.IsDone, id)
 	if err != nil {
 		return err
 	}
